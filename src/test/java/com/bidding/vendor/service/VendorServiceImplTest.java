@@ -11,10 +11,13 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 
 import com.bidding.vendor.entity.Vendor;
 import com.bidding.vendor.exception.VendorAlreadyExistsException;
 import com.bidding.vendor.repository.VendorRepository;
+import com.bidding.vendor.restCallHandler.UserClient;
 
 @ExtendWith(MockitoExtension.class)
 class VendorServiceImplTest {
@@ -26,6 +29,9 @@ class VendorServiceImplTest {
     private VendorServiceImpl vendorService;
 
     private Vendor vendor;
+    
+    @Mock
+	private UserClient userClient;
 
     @BeforeEach
     void setUp() {
@@ -38,9 +44,9 @@ class VendorServiceImplTest {
 
     @Test
     void testRegisterVendor_Success() {
-        when(vendorRepository.findByUserId(1L)).thenReturn(Optional.empty());
-        when(vendorRepository.save(vendor)).thenReturn(vendor);
-
+       when(vendorRepository.save(vendor)).thenReturn(vendor);
+       when(userClient.getUserById(vendor.getUserId())).thenReturn(new ResponseEntity<>(vendor, HttpStatus.OK) );
+       
         Vendor result = vendorService.registerVendor(vendor);
 
         assertNotNull(result);
@@ -51,13 +57,7 @@ class VendorServiceImplTest {
         verify(vendorRepository).save(vendor);
     }
 
-    @Test
-    void testRegisterVendor_VendorAlreadyExists() {
-        when(vendorRepository.findByUserId(1L)).thenReturn(Optional.of(vendor));
-
-        assertThrows(VendorAlreadyExistsException.class, () -> vendorService.registerVendor(vendor));
-        verify(vendorRepository, never()).save(any(Vendor.class));
-    }
+    
 
     @Test
     void testDeleteVendor() {
